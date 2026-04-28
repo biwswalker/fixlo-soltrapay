@@ -128,24 +128,34 @@ app.post("/api/withdraw", authMiddleware, async (req, res) => {
   }
 
   try {
-    const soltraResponse = await axios.post(
-      `${process.env.PAYMENT_API_ENDPOINT}/api/payment/withdraw`,
-      {
-        provider: "pspay", // หรือตัวแปรที่เลือกจากหน้าบ้าน
-        amount: parseFloat(amount),
-        user_bank_code: bank_code,
-        user_bank_acc_name: bank_acc_name,
-        user_bank_acc_number: bank_acc_number,
-        user_mobile: mobile,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYMENT_TOKEN}`,
-          "merchant-id": process.env.MERCHANT_ID,
-          "Content-Type": "application/json",
+    // const soltraResponse = await axios.post(
+    //   `${process.env.PAYMENT_API_ENDPOINT}/api/payment/withdraw`,
+    //   {
+    //     provider: "pspay", // หรือตัวแปรที่เลือกจากหน้าบ้าน
+    //     amount: parseFloat(amount),
+    //     user_bank_code: bank_code,
+    //     user_bank_acc_name: bank_acc_name,
+    //     user_bank_acc_number: bank_acc_number,
+    //     user_mobile: mobile,
+    //   },
+    //   {
+    //     headers: {
+    //       Authorization: `Bearer ${process.env.PAYMENT_TOKEN}`,
+    //       "merchant-id": process.env.MERCHANT_ID,
+    //       "Content-Type": "application/json",
+    //     },
+    //   },
+    // );
+
+    const soltraResponse = {
+      data: {
+        status: 200,
+        data: {
+          order_no: "7b450984-4ce1-4c15-99c2-ba26f05eb0bf-PS",
+          ref_order_no: "69f0b4084ec8d07390055a8c",
         },
       },
-    );
+    };
 
     console.log(
       "[SoltraPay] API Response:",
@@ -269,3 +279,12 @@ app.listen(3000, () => {
   console.log("  Time:", new Date().toLocaleString());
   console.log("========================================");
 });
+
+// soltrapay  | [SoltraPay] API Response: {
+// soltrapay  |   "status": 200,
+// soltrapay  |   "message": "success",
+// soltrapay  |   "data": {
+// soltrapay  |     "order_no": "7b450984-4ce1-4c15-99c2-ba26f05eb0bf-PS",
+// soltrapay  |     "ref_order_no": "69f0b4084ec8d07390055a8c"
+// soltrapay  |   }
+// soltrapay  | }
