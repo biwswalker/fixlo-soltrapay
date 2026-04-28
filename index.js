@@ -269,12 +269,3 @@ app.listen(3000, () => {
   console.log("  Time:", new Date().toLocaleString());
   console.log("========================================");
 });
-
-// soltrapay  | [SoltraPay] API Response: {
-// soltrapay  |   "status": 200,
-// soltrapay  |   "message": "success",
-// soltrapay  |   "data": {
-// soltrapay  |     "order_no": "7b450984-4ce1-4c15-99c2-ba26f05eb0bf-PS",
-// soltrapay  |     "ref_order_no": "69f0b4084ec8d07390055a8c"
-// soltrapay  |   }
-// soltrapay  | }
