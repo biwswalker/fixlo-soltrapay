@@ -14,7 +14,9 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const duration = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`,
+    );
     if (Object.keys(req.body).length > 0) {
       console.log("  Body:", JSON.stringify(req.body, null, 2));
     }
@@ -56,13 +58,13 @@ app.use(
 // --- Middleware: ตรวจสอบการ Login (Mock) ---
 const authMiddleware = (req, res, next) => {
   const token = req.cookies.auth_token;
-  if (!token) return res.redirect("/login");
+  if (!token) return res.redirect("/");
   next();
 };
 
 // --- Routes: UI ---
 
-app.get("/login", (req, res) => {
+app.get("/", (req, res) => {
   res.render("login");
 });
 
@@ -147,7 +149,10 @@ app.post("/api/withdraw", authMiddleware, async (req, res) => {
       },
     );
 
-    console.log("[SoltraPay] API Response:", JSON.stringify(soltraResponse.data, null, 2));
+    console.log(
+      "[SoltraPay] API Response:",
+      JSON.stringify(soltraResponse.data, null, 2),
+    );
 
     // ตรวจสอบว่า Provider ตอบกลับสำเร็จหรือไม่ (ตามสเปก 200 = success)
     if (soltraResponse.data.status === 200) {
@@ -210,7 +215,9 @@ app.post("/api/callback/withdraw", async (req, res) => {
     type,
   } = req.body;
 
-  console.log(`[Callback] Received for Order: ${order_no}, Status: ${status}, Amount: ${amount}`);
+  console.log(
+    `[Callback] Received for Order: ${order_no}, Status: ${status}, Amount: ${amount}`,
+  );
 
   // 2. ตรวจสอบประเภทรายการ
   if (type !== "withdraw") {
