@@ -9,6 +9,19 @@ const path = require("path");
 const app = express();
 app.use(express.json());
 
+// --- Debug: Request Logger ---
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
+    if (Object.keys(req.body).length > 0) {
+      console.log("  Body:", JSON.stringify(req.body, null, 2));
+    }
+  });
+  next();
+});
+
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -17,6 +30,15 @@ const pool = new Pool({
   port: process.env.DB_PORT,
   max: 20,
   keepAlive: true,
+});
+
+// Test Database Connection
+pool.query("SELECT NOW()", (err, res) => {
+  if (err) {
+    console.error("[Database] Connection Error:", err.stack);
+  } else {
+    console.log("[Database] Connected successfully at:", res.rows[0].now);
+  }
 });
 
 app.use(express.json());
@@ -125,6 +147,8 @@ app.post("/api/withdraw", authMiddleware, async (req, res) => {
       },
     );
 
+    console.log("[SoltraPay] API Response:", JSON.stringify(soltraResponse.data, null, 2));
+
     // ตรวจสอบว่า Provider ตอบกลับสำเร็จหรือไม่ (ตามสเปก 200 = success)
     if (soltraResponse.data.status === 200) {
       const ref_order_no = soltraResponse.data.result?.ref_order_no || "";
@@ -186,6 +210,8 @@ app.post("/api/callback/withdraw", async (req, res) => {
     type,
   } = req.body;
 
+  console.log(`[Callback] Received for Order: ${order_no}, Status: ${status}, Amount: ${amount}`);
+
   // 2. ตรวจสอบประเภทรายการ
   if (type !== "withdraw") {
     return res.status(400).json({ status: 400, message: "Invalid type" });
@@ -229,4 +255,10 @@ app.post("/api/callback/withdraw", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+app.listen(3000, () => {
+  console.log("========================================");
+  console.log("  Withdraw System Server is running!");
+  console.log("  Port: 3000");
+  console.log("  Time:", new Date().toLocaleString());
+  console.log("========================================");
+});
