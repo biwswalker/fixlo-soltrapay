@@ -128,8 +128,6 @@ app.post("/api/withdraw", authMiddleware, async (req, res) => {
   }
 
   try {
-    const order_no = `WD-${Date.now()}`;
-
     const soltraResponse = await axios.post(
       `${process.env.PAYMENT_API_ENDPOINT}/api/payment/withdraw`,
       {
@@ -156,13 +154,14 @@ app.post("/api/withdraw", authMiddleware, async (req, res) => {
 
     // ตรวจสอบว่า Provider ตอบกลับสำเร็จหรือไม่ (ตามสเปก 200 = success)
     if (soltraResponse.data.status === 200) {
-      const ref_order_no = soltraResponse.data.result?.ref_order_no || "";
+      const order_no = soltraResponse.data.data?.order_no || "";
+      const ref_order_no = soltraResponse.data.data?.ref_order_no || "";
 
       // // 2. บันทึกลงฐานข้อมูล PostgreSQL พร้อม ref_order_no จาก Provider
       await pool.query(
         `INSERT INTO withdraw_transactions
-                (order_no, ref_order_no, amount, user_bank_code, user_bank_acc_name, user_bank_acc_number, user_mobile, status)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                (order_no, ref_order_no, amount, user_bank_code, user_bank_acc_name, user_bank_acc_number, user_mobile, status, provider)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           order_no,
           ref_order_no,
@@ -172,6 +171,7 @@ app.post("/api/withdraw", authMiddleware, async (req, res) => {
           bank_acc_number,
           mobile,
           0,
+          "pspay",
         ],
       );
 
