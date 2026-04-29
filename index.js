@@ -88,28 +88,36 @@ app.post("/auth/login", async (req, res) => {
 
   try {
     // 1. ยิง HTTP POST request ไปที่ ${AUTH_API_URL}/auth/login
-    const response = await axios.post(`${process.env.AUTH_API_URL}/auth/login`, {
-      username,
-      password,
-    });
+    const response = await axios.post(
+      `${process.env.AUTH_API_URL}/auth/login`,
+      {
+        username,
+        password,
+      },
+    );
 
     console.log("[Auth] API Response received successfully");
 
     // 2. เมื่อได้รับ JSON Web Token (JWT) ให้เก็บไว้ใน Cookie
     // ตามโครงสร้าง response: { data: { accessToken, refreshToken, user } }
-    const token = response.data.data?.accessToken;
-    const refreshToken = response.data.data?.refreshToken;
-    
+    const token = response.data?.accessToken;
+    const refreshToken = response.data?.refreshToken;
+
     if (!token) {
-      console.error("[Auth] No accessToken received in API response. Full body:", JSON.stringify(response.data, null, 2));
-      return res.render("login", { error: "ไม่พบ Token ในการตอบกลับจาก Auth API" });
+      console.error(
+        "[Auth] No accessToken received in API response. Full body:",
+        JSON.stringify(response.data, null, 2),
+      );
+      return res.render("login", {
+        error: "ไม่พบ Token ในการตอบกลับจาก Auth API",
+      });
     }
 
     // เก็บ Token ใน Cookie (httpOnly เพื่อความปลอดภัย)
-    res.cookie("auth_token", token, { 
-      httpOnly: true, 
+    res.cookie("auth_token", token, {
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 3600000 // 1 hour
+      maxAge: 3600000, // 1 hour
     });
 
     console.log("[Auth] Cookie set, redirecting to /withdraw...");
@@ -117,8 +125,9 @@ app.post("/auth/login", async (req, res) => {
   } catch (error) {
     // 3. หาก Auth API ส่ง Error กลับมา ให้จัดการแสดง Error Message
     console.error("[Auth API Error]:", error.response?.data || error.message);
-    
-    const errorMessage = error.response?.data?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+
+    const errorMessage =
+      error.response?.data?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
     res.render("login", { error: errorMessage });
   }
 });
