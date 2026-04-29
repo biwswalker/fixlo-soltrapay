@@ -7,7 +7,13 @@ const session = require("express-session");
 const path = require("path");
 
 const app = express();
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf.toString();
+    },
+  }),
+);
 
 // --- Debug: Request Logger ---
 app.use((req, res, next) => {
@@ -43,7 +49,7 @@ pool.query("SELECT NOW()", (err, res) => {
   }
 });
 
-app.use(express.json());
+// app.use(express.json()); // Duplicate removed
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set("view engine", "ejs");
@@ -200,6 +206,8 @@ app.post("/api/callback/withdraw", async (req, res) => {
   const expectedToken = `Bearer ${process.env.CALLBACK_TOKEN}`;
   const expectedMerchantId = process.env.MERCHANT_ID;
 
+  console.log("Callback Headers: ", req.headers);
+
   if (authHeader !== expectedToken || merchantIdHeader !== expectedMerchantId) {
     console.error("[Callback] Unauthorized Access");
     return res.status(401).json({ status: 401, message: "Unauthorized" });
@@ -234,8 +242,9 @@ app.post("/api/callback/withdraw", async (req, res) => {
                 real_amount = $2, 
                 refund_amount = $3, 
                 payment_datetime = $4,
+                callback_raw = $5,
                 updated_at = NOW() 
-            WHERE order_no = $5 
+            WHERE order_no = $6 
             RETURNING *;
         `;
 
@@ -244,6 +253,7 @@ app.post("/api/callback/withdraw", async (req, res) => {
       real_amount,
       refund_amount,
       payment_datetime,
+      req.rawBody,
       order_no,
     ];
     const result = await pool.query(query, values);
