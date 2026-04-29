@@ -83,6 +83,8 @@ app.get("/", (req, res) => {
 
 app.post("/auth/login", async (req, res) => {
   const { username, password } = req.body;
+  console.log(`[Auth] Login attempt for: ${username}`);
+  console.log(`[Auth] Using API URL: ${process.env.AUTH_API_URL}`);
 
   try {
     // 1. ยิง HTTP POST request ไปที่ ${AUTH_API_URL}/auth/login
@@ -91,9 +93,16 @@ app.post("/auth/login", async (req, res) => {
       password,
     });
 
+    console.log("[Auth] API Response received successfully");
+
     // 2. เมื่อได้รับ JSON Web Token (JWT) ให้เก็บไว้ใน Cookie
     const { token } = response.data;
     
+    if (!token) {
+      console.error("[Auth] No token received in API response");
+      return res.render("login", { error: "ไม่พบ Token ในการตอบกลับจาก Auth API" });
+    }
+
     // เก็บ Token ใน Cookie (httpOnly เพื่อความปลอดภัย)
     res.cookie("auth_token", token, { 
       httpOnly: true, 
@@ -101,6 +110,7 @@ app.post("/auth/login", async (req, res) => {
       maxAge: 3600000 // 1 hour
     });
 
+    console.log("[Auth] Cookie set, redirecting to /withdraw...");
     res.redirect("/withdraw");
   } catch (error) {
     // 3. หาก Auth API ส่ง Error กลับมา ให้จัดการแสดง Error Message

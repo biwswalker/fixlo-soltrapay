@@ -15,7 +15,8 @@ const authenticateToken = (req, res, next) => {
   const token = tokenFromHeader || tokenFromCookie;
 
   if (!token) {
-    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+    console.log(`[Middleware] No token found for: ${req.originalUrl}`);
+    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
       return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
     return res.redirect("/");
@@ -23,13 +24,15 @@ const authenticateToken = (req, res, next) => {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
-      if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      console.error(`[Middleware] Token verification failed: ${err.message}`);
+      if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
         return res.status(403).json({ message: "Forbidden: Invalid token" });
       }
       return res.redirect("/");
     }
     
     // เอาข้อมูล User (id, username, roles) ไปใส่ไว้ใน req.user
+    console.log(`[Middleware] Token verified for user: ${user.username}`);
     req.user = user;
     next();
   });
