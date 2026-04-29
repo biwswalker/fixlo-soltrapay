@@ -29,10 +29,30 @@
         font-family: "Anuphan", sans-serif;
       }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/js/api.js"></script>
 </head>
 <body class="bg-gray-100 p-10">
     <div class="max-w-4xl mx-auto">
-        <h1 class="text-2xl font-bold mb-6">ถอนเงิน</h1>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">ถอนเงิน</h1>
+            <% if (locals.user) { %>
+                <div class="flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                        <%= user.username.substring(0, 2).toUpperCase() %>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-gray-900"><%= user.username %></div>
+                        <div class="text-[10px] text-gray-500 uppercase tracking-wider"><%= user.roles.join(', ') %></div>
+                    </div>
+                    <a href="/auth/logout" class="ml-2 text-gray-400 hover:text-red-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </a>
+                </div>
+            <% } %>
+        </div>
         <div class="bg-white p-8 rounded-2xl shadow-lg">
             <h2 class="text-xl font-bold mb-6 text-gray-800">ระบุข้อมูลการถอนเงิน</h2>
 
@@ -144,6 +164,9 @@
                             <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">จำนวน</th>
                             <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">สถานะ</th>
                             <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">วันที่</th>
+                            <% if (hasPermission('WITHDRAW_DELETE')) { %>
+                                <th class="p-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-center">จัดการ</th>
+                            <% } %>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -175,6 +198,15 @@
                             <% } %>
                         </td>
                         <td class="p-4 text-xs text-gray-500 text-right"><%= item.created_at.toLocaleString() %></td>
+                        <% if (hasPermission('WITHDRAW_DELETE')) { %>
+                            <td class="p-4 text-center">
+                                <button class="text-red-400 hover:text-red-600 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </td>
+                        <% } %>
                     </tr>
                     <% }) %>
                 </tbody>

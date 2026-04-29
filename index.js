@@ -5,6 +5,8 @@ const axios = require("axios");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const path = require("path");
+const { authenticateToken, authorize } = require("./middleware/auth");
+const { hasPermission } = require("./constants/permissions");
 
 const app = express();
 app.use(
@@ -14,6 +16,8 @@ app.use(
     },
   }),
 );
+
+app.use(express.static(path.join(__dirname, "public")));
 
 // --- Debug: Request Logger ---
 app.use((req, res, next) => {
@@ -61,12 +65,15 @@ app.use(
   }),
 );
 
-// --- Middleware: ตรวจสอบการ Login (Mock) ---
-const authMiddleware = (req, res, next) => {
-  const token = req.cookies.auth_token;
-  if (!token) return res.redirect("/");
+// --- Global Locals ---
+app.use((req, res, next) => {
+  res.locals.hasPermission = (permission) => {
+    if (!req.user) return false;
+    return hasPermission(req.user.roles, permission);
+  };
+  res.locals.user = req.user || null;
   next();
-};
+});
 
 // --- Routes: UI ---
 
@@ -74,14 +81,37 @@ app.get("/", (req, res) => {
   res.render("login");
 });
 
-app.post("/auth/login", (req, res) => {
+app.post("/auth/login", async (req, res) => {
   const { username, password } = req.body;
-  // Mock Auth: ยอมรับทุกอย่าง
-  res.cookie("auth_token", "mock-jwt-token", { httpOnly: true });
-  res.redirect("/withdraw");
+
+  try {
+    // 1. ยิง HTTP POST request ไปที่ ${AUTH_API_URL}/auth/login
+    const response = await axios.post(`${process.env.AUTH_API_URL}/auth/login`, {
+      username,
+      password,
+    });
+
+    // 2. เมื่อได้รับ JSON Web Token (JWT) ให้เก็บไว้ใน Cookie
+    const { token } = response.data;
+    
+    // เก็บ Token ใน Cookie (httpOnly เพื่อความปลอดภัย)
+    res.cookie("auth_token", token, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 3600000 // 1 hour
+    });
+
+    res.redirect("/withdraw");
+  } catch (error) {
+    // 3. หาก Auth API ส่ง Error กลับมา ให้จัดการแสดง Error Message
+    console.error("[Auth API Error]:", error.response?.data || error.message);
+    
+    const errorMessage = error.response?.data?.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+    res.render("login", { error: errorMessage });
+  }
 });
 
-app.get("/withdraw", authMiddleware, async (req, res) => {
+app.get("/withdraw", authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT * FROM withdraw_transactions ORDER BY created_at DESC LIMIT 10",
@@ -103,9 +133,14 @@ app.get("/withdraw", authMiddleware, async (req, res) => {
   }
 });
 
+app.get("/auth/logout", (req, res) => {
+  res.clearCookie("auth_token");
+  res.redirect("/");
+});
+
 // --- Routes: API (Action) ---
 
-app.post("/api/withdraw", authMiddleware, async (req, res) => {
+app.post("/api/withdraw", authenticateToken, async (req, res) => {
   const { amount, bank_code, bank_acc_name, bank_acc_number, mobile } =
     req.body;
 
