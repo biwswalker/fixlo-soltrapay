@@ -96,10 +96,12 @@ app.post("/auth/login", async (req, res) => {
     console.log("[Auth] API Response received successfully");
 
     // 2. เมื่อได้รับ JSON Web Token (JWT) ให้เก็บไว้ใน Cookie
-    const { token } = response.data;
+    // ตามโครงสร้าง response: { data: { accessToken, refreshToken, user } }
+    const token = response.data.data?.accessToken;
+    const refreshToken = response.data.data?.refreshToken;
     
     if (!token) {
-      console.error("[Auth] No token received in API response");
+      console.error("[Auth] No accessToken received in API response. Full body:", JSON.stringify(response.data, null, 2));
       return res.render("login", { error: "ไม่พบ Token ในการตอบกลับจาก Auth API" });
     }
 
